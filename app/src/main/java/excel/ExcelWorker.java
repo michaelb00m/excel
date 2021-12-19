@@ -27,6 +27,8 @@ public class ExcelWorker {
   Map<String, List<Integer>> map = new HashMap<>();
   Map<String, Beruf> idToBeruf = new HashMap<>();
   List<Beruf> berufe = new ArrayList<>();
+  List<Integer> totals = new ArrayList<>();
+  List<Integer> keineAngabe = new ArrayList<>();
 
   public void start() throws IOException {
     FileInputStream fis =
@@ -77,32 +79,42 @@ public class ExcelWorker {
       }
       figuresForYearMonth(year + (month < 10 ? "0" : "") + month);
     }
-    StringBuilder rows = new StringBuilder();
-    StringBuilder header = new StringBuilder();
-    header.append("Beruf");
-    int curMonth = 10;
-    for (int i = 0; i < 12; i++) {
-      if (curMonth > 11) {
-        curMonth = 0;
-      }
-      header.append(";");
-      header.append(months[curMonth]);
-      curMonth++;
+    List<StringBuilder> rows = new ArrayList<>();
+    for (int i = 0; i < 13; i++) {
+      rows.add(new StringBuilder());
     }
-    rows.append(header.append("\n").toString());
+    // add totals in first column
+    rows.get(0).append("Total").append(";");
+    for (int i = 0; i < 12; i++) {
+      rows.get(i + 1).append(totals.get(i)).append(";");
+    }
+    // add keineAngabe in second column
+    rows.get(0).append("Keine Angabe").append(";");
+    for (int i = 0; i < 12; i++) {
+      rows.get(i + 1).append(keineAngabe.get(i)).append(";");
+    }
     for (Beruf beruf : berufe) {
-      StringBuilder row = new StringBuilder();
-      row.append(beruf.bezeichnung());
-      for (int i = 1; i <= 12; i++) {
-        row.append(";");
-        row.append(map.get(beruf.id()).get(i - 1));
+      rows.get(0).append(beruf.bezeichnung());
+      rows.get(0).append(";");
+      for (int i = 0; i < 12; i++) {
+        rows.get(i + 1).append(map.get(beruf.id()).get(i));
+        rows.get(i + 1).append(";");
       }
-      rows.append(row.append("\n").toString());
+    }
+    for (StringBuilder sb : rows) {
+      // remove last char
+      if (sb.length() > 0)
+        sb.deleteCharAt(sb.length() - 1);
+    }
+    StringBuilder sb = new StringBuilder();
+    for (StringBuilder row : rows) {
+      sb.append(row);
+      sb.append("\n");
     }
     try (BufferedWriter writer = new BufferedWriter(
         new OutputStreamWriter(new FileOutputStream("data.csv"), StandardCharsets.UTF_8))) {
       writer.write('\uFEFF');
-      writer.write(rows.toString());
+      writer.write(sb.toString());
     }
   }
 
@@ -112,6 +124,10 @@ public class ExcelWorker {
     try (Workbook workbook = new XSSFWorkbook(fis)) {
       Sheet sheet = workbook.getSheetAt(4);
       int curBeruf = 0;
+      Row totalRow = sheet.getRow(15);
+      totals.add((int) totalRow.getCell(3).getNumericCellValue());
+      Row kaRow = sheet.getRow(20);
+      keineAngabe.add((int) kaRow.getCell(3).getNumericCellValue());
       // TODO: get this months total
       for (Row row : sheet) {
         // skip header
