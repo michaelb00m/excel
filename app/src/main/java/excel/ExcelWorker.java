@@ -72,39 +72,50 @@ public class ExcelWorker {
         }
       }
     }
-    for (int year = 2020, month = 11; year < 2021 || month <= 11; month++) {
+    for (int year = 2020, month = 2; year < 2021 || month <= 11; month++) {
       if (month > 12) {
         month = 1;
         year++;
       }
       figuresForYearMonth(year + (month < 10 ? "0" : "") + month);
     }
+    int nOfFiles = 22;
     List<StringBuilder> rows = new ArrayList<>();
-    for (int i = 0; i < 13; i++) {
+    for (int i = 0; i < nOfFiles + 1; i++) {
       rows.add(new StringBuilder());
     }
     // add totals in first column
     rows.get(0).append("Total").append(";");
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < nOfFiles; i++) {
       rows.get(i + 1).append(totals.get(i)).append(";");
     }
     // add keineAngabe in second column
     rows.get(0).append("Keine Angabe").append(";");
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < nOfFiles; i++) {
       rows.get(i + 1).append(keineAngabe.get(i)).append(";");
     }
     for (Beruf beruf : berufe) {
       rows.get(0).append(beruf.bezeichnung());
       rows.get(0).append(";");
-      for (int i = 0; i < 12; i++) {
+      for (int i = 0; i < nOfFiles; i++) {
         rows.get(i + 1).append(map.get(beruf.id()).get(i));
         rows.get(i + 1).append(";");
       }
     }
-    for (StringBuilder sb : rows) {
-      // remove last char
-      if (sb.length() > 0)
-        sb.deleteCharAt(sb.length() - 1);
+    rows.get(0).append("Datum");
+    // int i = 1;
+    // boolean lock = false;
+    // for (int year = 2020, month = 11 + 1; year < 2021 || month <= 11 + 1; month++) {
+    int year = 2020;
+    int month = 2 + 1;
+    for (int i = 1; i <= nOfFiles; i++) {
+      // if (month > 12 && lock) break;
+      if (month > 12) {
+        month = 1;
+        year++;
+      }
+      rows.get(i).append(year + "/" + month + "/" + "01");
+      month++;
     }
     StringBuilder sb = new StringBuilder();
     for (StringBuilder row : rows) {
@@ -112,7 +123,7 @@ public class ExcelWorker {
       sb.append("\n");
     }
     try (BufferedWriter writer = new BufferedWriter(
-        new OutputStreamWriter(new FileOutputStream("data.csv"), StandardCharsets.UTF_8))) {
+        new OutputStreamWriter(new FileOutputStream("arbeitslose.csv"), StandardCharsets.UTF_8))) {
       writer.write('\uFEFF');
       writer.write(sb.toString());
     }
